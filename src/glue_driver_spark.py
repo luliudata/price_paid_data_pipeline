@@ -1,0 +1,95 @@
+import sys
+import logging
+
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+from pyspark import SparkContext
+from pyspark.sql.types import StructType, StringType, IntegerType
+from pyspark.sql import functions as f
+
+LOGGINGFORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+logging.basicConfig(format=LOGGINGFORMAT, level=logging.INFO)
+
+# create glue context
+sc = SparkContext.getOrCreate()
+glueContext = GlueContext(sc)
+
+# create glue job
+glue_job = Job(glueContext)
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+
+glue_job.init(args['JOB_NAME'], args)
+
+# create spark session
+spark = glueContext.spark_session
+
+
+def data_pipeline(input_path, output_path):
+    logging.info("Starting the data pipeline")
+
+    # read data with schema
+    logging.info(f"Reading csv files from s3 path {input_path}")
+    schema = StructType() \
+        .add("transaction_unique_id", StringType(), True) \
+        .add("price", IntegerType(), True) \
+        .add("date_of_transfer", StringType(), True) \
+        .add("postcode", StringType(), True) \
+        .add("property_type", StringType(), True) \
+        .add("old_new", StringType(), True) \
+        .add("duration", StringType(), True) \
+        .add("PAON", StringType(), True) \
+        .add("SAON", StringType(), True) \
+        .add("street", StringType(), True) \
+        .add("locality", StringType(), True) \
+        .add("town_city", StringType(), True) \
+        .add("district", StringType(), True) \
+        .add("country", StringType(), True) \
+        .add("PPD_category_type", StringType(), True) \
+        .add("record_status", StringType(), True)
+
+    df_with_schema = spark.read.format("csv") \
+        .option("header", True) \
+        .schema(schema) \
+        .load(input_path)
+
+    # construct new identifier 'property_id' for each property
+    logging.info(f"Constructing a new identifier 'property_id'")
+    df = df_with_schema.withColumn('property_id',
+                                   f.hash('postcode', 'property_type', 'old_new', 'PAON', 'SAON'))
+
+    # move 'property_id' to the front column
+    # and remove the last column since it's the same for each transaction in the testing file
+    df = df.select([df.columns[-1]] + df.columns[:-2])
+
+    # group data
+    logging.info(f"Grouping transaction records based on 'property_id'")
+    grouped_df = df.select(f.col("property_id"),
+                           f.struct(f.col("transaction_unique_id"),
+                                    f.col("price"),
+                                    f.col("date_of_transfer"),
+                                    f.col("postcode"),
+                                    f.col("property_type"),
+                                    f.col("old_new"),
+                                    f.col("duration"),
+                                    f.col("PAON"),
+                                    f.col("SAON"),
+                                    f.col("street"),
+                                    f.col("locality"),
+                                    f.col("town_city"),
+                                    f.col("district"),
+                                    f.col("country"),
+                                    f.col("PPD_category_type")
+                                    ).alias("transactions")) \
+        .groupby("property_id") \
+        .agg(f.collect_list("transactions").alias("transactions"))
+
+    # write to json in S3
+    logging.info(f"Writing json files to s3 path {output_path}")
+    grouped_df.write.mode("overwrite").json(output_path, compression="gzip")
+
+
+if __name__ == "__main__":
+    data_pipeline("s3://ppd-paid-data-pipeline-input", "s3://ppd-paid-data-pipeline-output/output")
