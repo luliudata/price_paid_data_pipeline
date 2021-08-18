@@ -35,7 +35,7 @@ numpy==1.20.1
 
 Deployment
 ---------
-I have written an AWS Glue driver script, and deployed it to AWS Glue (the deployment to AWS is done manually due to time constraints).
+I have written an AWS Glue driver script (see `glue_driver_spark.py`), and deployed it to AWS Glue (the deployment to AWS is done manually due to time constraints).
 
 Glue provides a managed ETL service that runs on a serverless Apache Spark environment. 
 So it is ideal for our case, it allows us to focus on our ETL job and not worry about configuring and managing the underlying compute resources.
@@ -70,5 +70,10 @@ An example output file downloaded from output bucket can be found under folder '
 
 Future Work
 ---------
-Due to the time constraints, the deployment for data pipeline has not been automated.
-All the AWS resources used here can be created and managed via Terraform (for testing purpose, those resources are created manually via AWS console).
+Due to the time constraints, below are some future work to explore:
+- The deployment for data pipeline has not been automated, the artifact used by Glue job is manually uploaded to an S3 bucket,
+and pointed to the Glue job. This step can be automated and the artifact should be versioned.
+- All the AWS resources used here can be created and managed via Terraform 
+(for testing purpose, those resources are created and edited manually via AWS console).
+- Except using Spark, Beam is also a good tool to explore.
+- Adding tests for the scripts.
