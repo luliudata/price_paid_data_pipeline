@@ -8,7 +8,7 @@ Data Source: https://www.gov.uk/government/statistical-data-sets/price-paid-data
 
 Data Definition Information: https://www.gov.uk/guidance/about-the-price-paid-data#download-option
 
-The input dataset used by this repo is the Part 1 yearly file for 2021.
+The input dataset used by this repo is the Part 1 yearly file for 2021 (see file `pp-2021-part1.csv`).
 
 The output file `part-00000-3bbeb519-143c-47a9-8aa1-46e6407fd6dc-c000.json` can be found under `spark-test-output` folder.
 
