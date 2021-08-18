@@ -15,6 +15,7 @@ The output file `part-00000-3bbeb519-143c-47a9-8aa1-46e6407fd6dc-c000.json` can 
 
 Prerequisites
 ---------
+To run pyspark script locally:
 ```
 Spark 2.3.3
 Hadoop 2.7.1
@@ -26,3 +27,8 @@ Please note that if you run the script in PyCharm, please do the following:
 
 In `Project structure` -> `Add content root` -> add the path of the Spark python executable -> restart PyCharm.
 
+To run Jupyter notebook script (Python 3.8):
+```
+pandas==1.2.4
+numpy==1.20.1
+```
