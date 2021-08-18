@@ -5,7 +5,7 @@ from pyspark.sql import functions as f, SparkSession
 spark = SparkSession.builder.appName('local').getOrCreate()
 
 
-def data_pipeline(input, output):
+def data_pipeline(input_path, output_path):
     # read data with schema
     schema = StructType() \
         .add("transaction_unique_id", StringType(), True) \
@@ -28,7 +28,7 @@ def data_pipeline(input, output):
     df_with_schema = spark.read.format("csv") \
         .option("header", True) \
         .schema(schema) \
-        .load(input) # input can be either a local csv file or an S3 path
+        .load(input_path) # input can be either a local csv file or an S3 path
 
     # input_df = spark.read.option("header", True).csv(input_s3_path)
 
@@ -63,10 +63,7 @@ def data_pipeline(input, output):
 
     # write to json file locally
     # downside for this is we can't overwrite existing file with the same file name
-    grouped_df.coalesce(1).write.format('json').save(output)
-
-    # write to json in S3
-    # grouped_df.write.mode("overwrite").json(s3_output_path, compression="gzip")
+    grouped_df.coalesce(1).write.format('json').save(output_path)
 
 
 if __name__ == "__main__":
